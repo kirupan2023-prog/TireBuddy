@@ -205,9 +205,25 @@
             </section>
 
             <!-- Section 3: Smart Upsize Engine -->
-            <section class="bg-app-card border border-app-border rounded-2xl p-6 shadow-xl overflow-hidden">
-                <div class="mb-6">
+            <section class="bg-app-card border border-app-border rounded-2xl p-6 shadow-xl relative">
+                <div class="mb-6 flex items-center gap-2">
                     <h2 class="text-lg font-semibold uppercase tracking-tight">Smart Upsize Engine</h2>
+                    <!-- Info Tooltip -->
+                    <div class="group relative flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-app-text-muted cursor-help hover:text-app-accent transition-colors">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M12 16v-4"></path>
+                            <path d="M12 8h.01"></path>
+                        </svg>
+                        <!-- Tooltip Content -->
+                        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-3 bg-app-card border border-app-border rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none">
+                            <p class="text-[10px] font-mono leading-relaxed text-app-text">
+                                Suggestions are mathematically constrained to ±3% rotational variance and filtered against ISO/ETRTO standard commercial tire sizes.
+                            </p>
+                            <!-- Arrow -->
+                            <div class="absolute top-full left-1/2 -translate-x-1/2 -mt-px border-8 border-transparent border-t-app-border"></div>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="space-y-4">
@@ -342,18 +358,23 @@
         }
 
         function getUpsizeSuggestions(width, aspectRatio, rimSize, currentDiameter) {
+            // --- Industry Standard Validation ---
+            // Standard manufacturing increments for widths and aspect ratios (ISO/ETRTO)
+            const standardWidths = [145, 155, 165, 175, 185, 195, 205, 215, 225, 235, 245, 255, 265, 275, 285, 295, 305, 315, 325];
+            const standardRatios = [30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85];
+            
             const suggestions = [];
-            const widths = [width - 20, width - 10, width, width + 10, width + 20];
-            const ratios = [aspectRatio - 10, aspectRatio - 5, aspectRatio, aspectRatio + 5, aspectRatio + 10];
 
-            widths.forEach(w => {
-                ratios.forEach(ar => {
+            // Loop through industry-standard dimensions
+            standardWidths.forEach(w => {
+                standardRatios.forEach(ar => {
+                    // Skip the current size
                     if (w === width && ar === aspectRatio) return;
-                    if (w <= 0 || ar <= 0) return;
                     
                     const d = calculateDiameter(w, ar, rimSize);
                     const diffPercent = ((d - currentDiameter) / currentDiameter) * 100;
                     
+                    // Strictly filter within the ±3% safety window (Speedometer Difference)
                     if (Math.abs(diffPercent) <= 3) {
                         suggestions.push({
                             w, ar, r: rimSize,
@@ -364,7 +385,10 @@
                 });
             });
 
-            return suggestions.sort((a, b) => Math.abs(a.diff) - Math.abs(b.diff)).slice(0, 4);
+            // Sort logically by width, then by aspect ratio for a user-friendly list
+            return suggestions
+                .sort((a, b) => a.w - b.w || a.ar - b.ar)
+                .slice(0, 6); // Showing top 6 standard matches
         }
 
         // --- UI Update Functions ---
