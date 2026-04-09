@@ -108,7 +108,10 @@
             <section class="bg-app-card border border-app-border rounded-2xl p-6 shadow-2xl">
                 <div class="mb-6">
                     <h2 class="text-lg font-semibold uppercase tracking-tight">Tire Upsizing guide</h2>
+                    <p class="text-[10px] text-app-text-muted italic mt-1">Note: Calculator designed for modern Metric Radial tires. Bias-ply support coming in V2.0.</p>
                 </div>
+
+                <p class="text-xs text-app-text-muted font-mono mb-4 text-center">Check your tire's sidewall for the following dimensions</p>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
                     <!-- Visual Tire SVG -->
@@ -116,7 +119,7 @@
                         <svg viewBox="0 0 200 200" class="w-full max-w-[280px] tire-svg-container">
                             <defs>
                                 <path id="tirePath" d="M 35, 100 A 65, 65 0 1, 1 165, 100 A 65, 65 0 1, 1 35, 100" />
-                                <path id="dotPath" d="M 60, 140 A 45, 45 0 0, 0 140, 140" />
+                                <path id="dotPath" d="M 42, 60 A 75, 75 0 0, 0 42, 140" />
                             </defs>
                             
                             <!-- Outer Tire (Rubber) -->
@@ -142,20 +145,13 @@
                             </text>
 
                             <!-- DOT Placeholder -->
-                            <text id="svgDotText" class="font-mono text-[6px] fill-zinc-600 font-bold">
-                                <textPath href="#dotPath" startOffset="50%" textAnchor="middle">
-                                    DOT XXXX
-                                </textPath>
-                            </text>
-
-                            <!-- Visual Cues -->
-                            <g id="cueWidth" class="hidden">
-                                <path d="M 20,100 L 180,100" stroke="#3b82f6" stroke-width="1" stroke-dasharray="4 2" />
-                                <text x="100" y="95" textAnchor="middle" class="fill-app-accent text-[6px] font-mono">SECTION WIDTH</text>
-                            </g>
-                            <g id="cueAspectRatio" class="hidden">
-                                <line x1="100" y1="5" x2="100" y2="55" stroke="#3b82f6" stroke-width="1" />
-                                <text x="105" y="30" class="fill-app-accent text-[6px] font-mono">SIDEWALL HEIGHT</text>
+                            <g>
+                                <path d="M 42, 60 A 75, 75 0 0, 0 42, 140" fill="none" stroke="currentColor" stroke-width="14" class="text-zinc-800/40" />
+                                <text id="svgDotText" class="font-mono text-[9px] fill-zinc-500 font-bold">
+                                    <textPath href="#dotPath" startOffset="50%" textAnchor="middle">
+                                        DOT XXXX
+                                    </textPath>
+                                </text>
                             </g>
                         </svg>
                     </div>
@@ -328,8 +324,6 @@
             svgRimSize: document.getElementById('svgRimSize'),
             svgDotText: document.querySelector('#svgDotText textPath'),
             sidewallHighlight: document.getElementById('sidewallHighlight'),
-            cueWidth: document.getElementById('cueWidth'),
-            cueAspectRatio: document.getElementById('cueAspectRatio'),
             tireOuter: document.getElementById('tireOuter'),
             tireInner: document.getElementById('tireInner'),
             rimOuter: document.getElementById('rimOuter'),
@@ -527,26 +521,22 @@
         elements.inputWidth.addEventListener('focus', () => {
             elements.sidewallHighlight.style.opacity = '0.3';
             elements.sidewallHighlight.setAttribute('stroke', state.isLightMode ? '#2563eb' : '#3b82f6');
-            elements.cueWidth.classList.remove('hidden');
             elements.svgWidth.classList.add('fill-app-accent');
         });
         elements.inputWidth.addEventListener('blur', () => {
             elements.sidewallHighlight.style.opacity = '0.1';
             elements.sidewallHighlight.setAttribute('stroke', state.isLightMode ? '#d1d5db' : '#2d333b');
-            elements.cueWidth.classList.add('hidden');
             elements.svgWidth.classList.remove('fill-app-accent');
         });
 
         elements.inputAspectRatio.addEventListener('focus', () => {
             elements.sidewallHighlight.style.opacity = '0.3';
             elements.sidewallHighlight.setAttribute('stroke', state.isLightMode ? '#2563eb' : '#3b82f6');
-            elements.cueAspectRatio.classList.remove('hidden');
             elements.svgAspectRatio.classList.add('fill-app-accent');
         });
         elements.inputAspectRatio.addEventListener('blur', () => {
             elements.sidewallHighlight.style.opacity = '0.1';
             elements.sidewallHighlight.setAttribute('stroke', state.isLightMode ? '#d1d5db' : '#2d333b');
-            elements.cueAspectRatio.classList.add('hidden');
             elements.svgAspectRatio.classList.remove('fill-app-accent');
         });
 
