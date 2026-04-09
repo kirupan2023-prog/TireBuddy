@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TireBuddy - Your pocket friendly tire consultant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Dark Mode (Default) */
+            --app-bg: #0f1115;
+            --app-card: #1a1d23;
+            --app-accent: #3b82f6;
+            --app-border: #2d333b;
+            --app-text: #ffffff;
+            --app-text-muted: #8b949e;
+            --app-accent-glow: rgba(59, 130, 246, 0.2);
+        }
+
+        :root.light {
+            /* Light Mode */
+            --app-bg: #f8f9fa;
+            --app-card: #ffffff;
+            --app-accent: #2563eb;
+            --app-border: #e5e7eb;
+            --app-text: #111827;
+            --app-text-muted: #6b7280;
+            --app-accent-glow: rgba(37, 99, 235, 0.1);
+        }
+
+        body {
+            background-color: var(--app-bg);
+            color: var(--app-text);
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+        .bg-app-card { background-color: var(--app-card); }
+        .border-app-border { border-color: var(--app-border); }
+        .text-app-accent { color: var(--app-accent); }
+        .text-app-text-muted { color: var(--app-text-muted); }
+        .bg-app-bg { background-color: var(--app-bg); }
+
+        .transition-all { transition: all 0.3s ease; }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--app-bg); }
+        ::-webkit-scrollbar-thumb { background: var(--app-border); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--app-accent); }
+
+        .tire-svg-container {
+            filter: drop-shadow(0 0 15px var(--app-accent-glow));
+        }
+
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .dot-status-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .hidden { display: none; }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8">
+    <div class="max-w-2xl mx-auto">
+        <!-- Header -->
+        <header class="mb-8 flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold tracking-tighter text-app-accent">
+                    TIREBUDDY
+                </h1>
+                <p class="text-app-text-muted text-sm font-mono uppercase tracking-widest">A Tire consultant in your pocket  </p>
+            </div>
+            <div class="flex items-center gap-4">
+                <button id="themeToggle" class="px-4 py-2 rounded-lg bg-app-card border border-app-border hover:border-app-accent transition-colors shadow-sm" aria-label="Toggle Theme">
+                    <span id="themeText" class="text-xs font-mono font-bold text-app-accent uppercase">Dark Mode</span>
+                </button>
+                <div class="text-right hidden sm:block">
+                    <p class="text-xs font-mono text-app-text-muted">SYSTEM_TIME: 2026.04.08</p>
+                    <p class="text-xs font-mono text-app-accent">STATUS: ONLINE</p>
+                </div>
+            </div>
+        </header>
+
+        <main class="space-y-8">
+            <!-- Section 1: Visual Tire Input -->
+            <section class="bg-app-card border border-app-border rounded-2xl p-6 shadow-2xl">
+                <div class="mb-6">
+                    <h2 class="text-lg font-semibold uppercase tracking-tight">Tire Upsizing guide</h2>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                    <!-- Visual Tire SVG -->
+                    <div class="relative flex justify-center py-4">
+                        <svg viewBox="0 0 200 200" class="w-full max-w-[280px] tire-svg-container">
+                            <defs>
+                                <path id="tirePath" d="M 35, 100 A 65, 65 0 1, 1 165, 100 A 65, 65 0 1, 1 35, 100" />
+                                <path id="dotPath" d="M 60, 140 A 45, 45 0 0, 0 140, 140" />
+                            </defs>
+                            
+                            <!-- Outer Tire (Rubber) -->
+                            <circle id="tireOuter" cx="100" cy="100" r="95" fill="#18181b" />
+                            <circle id="tireInner" cx="100" cy="100" r="90" fill="none" stroke="#27272a" stroke-width="10" />
+                            
+                            <!-- Sidewall Area -->
+                            <circle id="sidewallHighlight" cx="100" cy="100" r="75" fill="none" stroke="#2d333b" stroke-width="30" opacity="0.1" style="transition: all 0.3s ease;" />
+
+                            <!-- Rim (Metal) -->
+                            <circle id="rimOuter" cx="100" cy="100" r="55" fill="#27272a" stroke="#3f3f46" stroke-width="2" />
+                            <circle id="rimInner" cx="100" cy="100" r="50" fill="none" stroke="#52525b" stroke-width="1" opacity="0.3" />
+                            
+                            <!-- Tire Size Text on Sidewall -->
+                            <text id="svgTireText" class="font-mono text-[10px] fill-white font-bold tracking-widest">
+                                <textPath href="#tirePath" startOffset="50%" textAnchor="middle">
+                                    <tspan id="svgWidth">225</tspan>
+                                    <tspan id="svgSeparator1" class="fill-zinc-600"> / </tspan>
+                                    <tspan id="svgAspectRatio">45</tspan>
+                                    <tspan id="svgSeparator2" class="fill-zinc-600"> R </tspan>
+                                    <tspan id="svgRimSize">17</tspan>
+                                </textPath>
+                            </text>
+
+                            <!-- DOT Placeholder -->
+                            <text id="svgDotText" class="font-mono text-[6px] fill-zinc-600 font-bold">
+                                <textPath href="#dotPath" startOffset="50%" textAnchor="middle">
+                                    DOT XXXX
+                                </textPath>
+                            </text>
+
+                            <!-- Visual Cues -->
+                            <g id="cueWidth" class="hidden">
+                                <path d="M 20,100 L 180,100" stroke="#3b82f6" stroke-width="1" stroke-dasharray="4 2" />
+                                <text x="100" y="95" textAnchor="middle" class="fill-app-accent text-[6px] font-mono">SECTION WIDTH</text>
+                            </g>
+                            <g id="cueAspectRatio" class="hidden">
+                                <line x1="100" y1="5" x2="100" y2="55" stroke="#3b82f6" stroke-width="1" />
+                                <text x="105" y="30" class="fill-app-accent text-[6px] font-mono">SIDEWALL HEIGHT</text>
+                            </g>
+                        </svg>
+                    </div>
+
+                    <!-- Inputs -->
+                    <div class="space-y-4">
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-mono text-app-text-muted uppercase tracking-widest">Width (mm)</label>
+                            <input type="number" id="inputWidth" value="225" class="w-full bg-app-bg border border-app-border rounded-lg px-4 py-3 focus:outline-none focus:border-app-accent transition-colors font-mono text-app-text" placeholder="e.g. 225">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-mono text-app-text-muted uppercase tracking-widest">Aspect Ratio (%)</label>
+                            <input type="number" id="inputAspectRatio" value="45" class="w-full bg-app-bg border border-app-border rounded-lg px-4 py-3 focus:outline-none focus:border-app-accent transition-colors font-mono text-app-text" placeholder="e.g. 45">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-mono text-app-text-muted uppercase tracking-widest">Rim Size (Inches)</label>
+                            <input type="number" id="inputRimSize" value="17" class="w-full bg-app-bg border border-app-border rounded-lg px-4 py-3 focus:outline-none focus:border-app-accent transition-colors font-mono text-app-text" placeholder="e.g. 17">
+                        </div>
+                        <div class="pt-2">
+                            <p class="text-xs text-app-text-muted font-mono">
+                                TOTAL DIAMETER: <span id="displayDiameter" class="text-app-accent font-bold">0.0 mm</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 2: Tire Pressure Recommendations -->
+            <section class="bg-app-card border border-app-border rounded-2xl p-6 shadow-xl">
+                <div class="mb-6">
+                    <h2 class="text-lg font-semibold uppercase tracking-tight">Pressure Recommendations</h2>
+                </div>
+                
+                <div class="space-y-4">
+                    <div class="bg-app-bg border border-app-border p-5 rounded-xl">
+                        <p class="text-[10px] font-mono text-app-text-muted uppercase mb-1">Estimated Optimal Range</p>
+                        <p id="displayPsi" class="text-2xl font-bold text-app-accent font-mono">--</p>
+                    </div>
+                    
+                    <div id="psiDisclaimer" class="p-4 bg-blue-900/10 border border-blue-900/30 rounded-xl">
+                        <p id="psiText" class="text-[11px] text-blue-200/70 leading-relaxed">
+                            <span class="font-bold text-blue-300">Disclaimer:</span> This is a general guideline based on tire volume. 
+                            Always refer to your vehicle's <span class="text-white font-semibold disclaimer-highlight">door placard</span> or <span class="text-white font-semibold disclaimer-highlight">owner's manual</span> for the manufacturer-specified cold tire pressure.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 3: Smart Upsize Engine -->
+            <section class="bg-app-card border border-app-border rounded-2xl p-6 shadow-xl overflow-hidden">
+                <div class="mb-6">
+                    <h2 class="text-lg font-semibold uppercase tracking-tight">Smart Upsize Engine</h2>
+                </div>
+                
+                <div class="space-y-4">
+                    <p class="text-sm text-app-text-muted mb-4">
+                        Suggestions within <span class="text-app-text font-bold">±3% variance</span>. 
+                        Keeping your speedometer accurate.
+                    </p>
+                    
+                    <div id="upsizeContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <!-- Suggestions will be injected here -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 4: DOT Age Checker -->
+            <section class="bg-app-card border border-app-border rounded-2xl p-6 shadow-xl">
+                <div class="mb-6">
+                    <h2 class="text-lg font-semibold uppercase tracking-tight">DOT Age Checker</h2>
+                </div>
+
+                <div class="space-y-6">
+                    <div class="p-4 bg-app-bg border border-app-border rounded-xl">
+                        <div>
+                            <p class="text-xs font-bold uppercase mb-1">Where to find it?</p>
+                            <p class="text-[11px] text-app-text-muted leading-relaxed">
+                                Look for the letters <span class="text-white font-semibold disclaimer-highlight">"DOT"</span> followed by a series of characters. 
+                                The <span class="text-white font-semibold disclaimer-highlight">last 4 digits</span> (often in a raised oval) represent the week and year of manufacture.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-mono text-app-text-muted uppercase tracking-widest">4-Digit DOT Code (WWYY)</label>
+                        <input type="text" id="inputDotCode" maxlength="4" class="w-full bg-app-bg border border-app-border rounded-lg px-4 py-3 focus:outline-none focus:border-app-accent transition-colors font-mono text-xl tracking-[0.5em] text-center text-app-text" placeholder="0000">
+                    </div>
+
+                    <div id="dotStatusResult" class="hidden dot-status-card border border-white/5 rounded-xl p-4">
+                        <div>
+                            <p id="dotStatusLabel" class="text-sm font-bold uppercase tracking-tight"></p>
+                            <p id="dotStatusAge" class="text-xs text-app-text-muted font-mono"></p>
+                        </div>
+                    </div>
+
+                    <div id="safetyNote" class="bg-red-950/20 border border-red-900/30 rounded-xl p-4">
+                        <h3 class="text-red-400 text-xs font-bold uppercase mb-2">
+                            TireBuddy Safety Note
+                        </h3>
+                        <p id="safetyText" class="text-[11px] leading-relaxed text-red-200/70 safety-text">
+                            ⚠️ Important: This check is for age only. Even if your tire is young, always check your tread depth. 
+                            If the tread is worn down to the wear bars, replace your tire immediately regardless of its age!
+                        </p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="mt-12 py-8 border-t border-app-border text-center">
+            <p class="text-[10px] font-mono text-app-text-muted uppercase tracking-[0.2em]">
+                Designed for Mechanical Integrity & Safety
+            </p>
+            <p class="text-[9px] font-mono text-app-text-muted/50 mt-2">
+                © 2026 TIREBUDDY SYSTEMS • V1.0.4-STABLE
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        // --- Constants ---
+        const INCH_TO_MM = 25.4;
+        const CURRENT_YEAR = 2026;
+
+        // --- State ---
+        let state = {
+            width: 225,
+            aspectRatio: 45,
+            rimSize: 17,
+            dotCode: '',
+            isLightMode: false
+        };
+
+        // --- DOM Elements ---
+        const elements = {
+            themeToggle: document.getElementById('themeToggle'),
+            themeText: document.getElementById('themeText'),
+            inputWidth: document.getElementById('inputWidth'),
+            inputAspectRatio: document.getElementById('inputAspectRatio'),
+            inputRimSize: document.getElementById('inputRimSize'),
+            inputDotCode: document.getElementById('inputDotCode'),
+            displayDiameter: document.getElementById('displayDiameter'),
+            displayPsi: document.getElementById('displayPsi'),
+            upsizeContainer: document.getElementById('upsizeContainer'),
+            dotStatusResult: document.getElementById('dotStatusResult'),
+            dotStatusLabel: document.getElementById('dotStatusLabel'),
+            dotStatusAge: document.getElementById('dotStatusAge'),
+            
+            // SVG Elements
+            svgWidth: document.getElementById('svgWidth'),
+            svgAspectRatio: document.getElementById('svgAspectRatio'),
+            svgRimSize: document.getElementById('svgRimSize'),
+            svgDotText: document.querySelector('#svgDotText textPath'),
+            sidewallHighlight: document.getElementById('sidewallHighlight'),
+            cueWidth: document.getElementById('cueWidth'),
+            cueAspectRatio: document.getElementById('cueAspectRatio'),
+            tireOuter: document.getElementById('tireOuter'),
+            tireInner: document.getElementById('tireInner'),
+            rimOuter: document.getElementById('rimOuter'),
+            rimInner: document.getElementById('rimInner'),
+            svgSeparator1: document.getElementById('svgSeparator1'),
+            svgSeparator2: document.getElementById('svgSeparator2'),
+            svgTireText: document.getElementById('svgTireText'),
+            
+            // Theme specific elements
+            psiDisclaimer: document.getElementById('psiDisclaimer'),
+            psiText: document.getElementById('psiText'),
+            safetyNote: document.getElementById('safetyNote'),
+            safetyText: document.getElementById('safetyText')
+        };
+
+        // --- Logic Functions ---
+        function calculateDiameter(w, ar, r) {
+            const sidewallHeight = w * (ar / 100);
+            return (2 * sidewallHeight) + (r * INCH_TO_MM);
+        }
+
+        function getPsiRecommendation(w, ar, r) {
+            if (w >= 265 || r >= 19) return "35 - 42 PSI (High Load/Large)";
+            if (w >= 235 || ar <= 45) return "32 - 38 PSI (Performance/Wide)";
+            return "30 - 34 PSI (Standard Passenger)";
+        }
+
+        function getUpsizeSuggestions(width, aspectRatio, rimSize, currentDiameter) {
+            const suggestions = [];
+            const widths = [width - 20, width - 10, width, width + 10, width + 20];
+            const ratios = [aspectRatio - 10, aspectRatio - 5, aspectRatio, aspectRatio + 5, aspectRatio + 10];
+
+            widths.forEach(w => {
+                ratios.forEach(ar => {
+                    if (w === width && ar === aspectRatio) return;
+                    if (w <= 0 || ar <= 0) return;
+                    
+                    const d = calculateDiameter(w, ar, rimSize);
+                    const diffPercent = ((d - currentDiameter) / currentDiameter) * 100;
+                    
+                    if (Math.abs(diffPercent) <= 3) {
+                        suggestions.push({
+                            w, ar, r: rimSize,
+                            diff: diffPercent,
+                            speedo: 100 * (currentDiameter / d)
+                        });
+                    }
+                });
+            });
+
+            return suggestions.sort((a, b) => Math.abs(a.diff) - Math.abs(b.diff)).slice(0, 4);
+        }
+
+        // --- UI Update Functions ---
+        function updateUI() {
+            const diameter = calculateDiameter(state.width, state.aspectRatio, state.rimSize);
+            elements.displayDiameter.textContent = `${diameter.toFixed(1)} mm`;
+            elements.displayPsi.textContent = getPsiRecommendation(state.width, state.aspectRatio, state.rimSize);
+
+            // Update SVG Text
+            elements.svgWidth.textContent = state.width || '---';
+            elements.svgAspectRatio.textContent = state.aspectRatio || '--';
+            elements.svgRimSize.textContent = state.rimSize || '--';
+            elements.svgDotText.textContent = `DOT ${state.dotCode || 'XXXX'}`;
+
+            // Update Upsize Suggestions
+            const suggestions = getUpsizeSuggestions(state.width, state.aspectRatio, state.rimSize, diameter);
+            elements.upsizeContainer.innerHTML = suggestions.length > 0 
+                ? suggestions.map(s => `
+                    <div class="bg-app-bg border border-app-border p-4 rounded-xl hover:border-app-accent transition-colors group">
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="font-mono text-lg font-bold">${s.w}/${s.ar} R${s.r}</span>
+                            <span class="text-[10px] font-mono px-2 py-0.5 rounded ${Math.abs(s.diff) < 1 ? (state.isLightMode ? 'bg-green-100 text-green-700' : 'bg-green-900/40 text-green-400') : (state.isLightMode ? 'bg-blue-100 text-blue-700' : 'bg-blue-900/40 text-blue-400')}">
+                                ${s.diff > 0 ? '+' : ''}${s.diff.toFixed(1)}%
+                            </span>
+                        </div>
+                        <div class="space-y-1">
+                            <p class="text-[10px] font-mono text-app-text-muted uppercase">Speedometer Difference</p>
+                            <p class="text-xs font-mono">
+                                At 100km/h, shows <span class="text-app-accent font-bold">${s.speedo.toFixed(1)}km/h</span>
+                            </p>
+                        </div>
+                    </div>
+                `).join('')
+                : `<div class="col-span-full py-8 text-center border border-dashed border-app-border rounded-xl">
+                    <p class="text-app-text-muted text-sm font-mono">No safe alternatives found for this size.</p>
+                   </div>`;
+
+            // Update DOT Status
+            if (state.dotCode.length === 4) {
+                const year = parseInt(state.dotCode.substring(2)) + 2000;
+                const age = CURRENT_YEAR - year;
+                let status = { label: 'Replace (Old)', color: 'text-red-400', bg: 'bg-red-900/20', icon: 'alert-triangle' };
+                
+                if (age < 0) status = { label: 'Invalid Year', color: 'text-gray-400', bg: 'bg-gray-800', icon: 'info' };
+                else if (age <= 5) status = { label: 'Safe (Young)', color: 'text-green-400', bg: 'bg-green-900/20', icon: 'check-circle-2' };
+                else if (age <= 9) status = { label: 'Caution (Aging)', color: 'text-yellow-400', bg: 'bg-yellow-900/20', icon: 'alert-triangle' };
+
+                elements.dotStatusResult.className = `${status.bg} border border-white/5 rounded-xl p-4 dot-status-card`;
+                elements.dotStatusLabel.className = `text-sm font-bold uppercase tracking-tight ${status.color}`;
+                elements.dotStatusLabel.textContent = status.label;
+                elements.dotStatusAge.textContent = age >= 0 ? `Tire is approximately ${age} years old.` : 'Please enter a valid code.';
+                elements.dotStatusResult.classList.remove('hidden');
+            } else {
+                elements.dotStatusResult.classList.add('hidden');
+            }
+        }
+
+        function updateTheme() {
+            if (state.isLightMode) {
+                document.documentElement.classList.add('light');
+                elements.themeText.textContent = 'Light Mode';
+                
+                // SVG Theme Updates
+                elements.tireOuter.setAttribute('fill', '#374151');
+                elements.tireInner.setAttribute('stroke', '#4b5563');
+                elements.rimOuter.setAttribute('fill', '#e5e7eb');
+                elements.rimOuter.setAttribute('stroke', '#9ca3af');
+                elements.rimInner.setAttribute('stroke', '#9ca3af');
+                elements.svgTireText.classList.remove('fill-white');
+                elements.svgTireText.classList.add('fill-gray-800');
+                elements.svgSeparator1.classList.replace('fill-zinc-600', 'fill-gray-400');
+                elements.svgSeparator2.classList.replace('fill-zinc-600', 'fill-gray-400');
+                elements.svgDotText.parentElement.classList.replace('fill-zinc-600', 'fill-gray-400');
+                
+                // Disclaimer & Note
+                elements.psiDisclaimer.className = 'p-4 bg-blue-50 border border-blue-100 rounded-xl';
+                elements.psiText.className = 'text-[11px] text-blue-800 leading-relaxed';
+                elements.psiDisclaimer.querySelectorAll('.disclaimer-highlight').forEach(el => el.className = 'text-black font-semibold disclaimer-highlight');
+                
+                elements.safetyNote.className = 'bg-red-50 border border-red-100 rounded-xl p-4';
+                elements.safetyText.className = 'text-[11px] leading-relaxed text-red-800 safety-text';
+            } else {
+                document.documentElement.classList.remove('light');
+                elements.themeText.textContent = 'Dark Mode';
+
+                // SVG Theme Updates
+                elements.tireOuter.setAttribute('fill', '#18181b');
+                elements.tireInner.setAttribute('stroke', '#27272a');
+                elements.rimOuter.setAttribute('fill', '#27272a');
+                elements.rimOuter.setAttribute('stroke', '#3f3f46');
+                elements.rimInner.setAttribute('stroke', '#52525b');
+                elements.svgTireText.classList.add('fill-white');
+                elements.svgTireText.classList.remove('fill-gray-800');
+                elements.svgSeparator1.classList.replace('fill-gray-400', 'fill-zinc-600');
+                elements.svgSeparator2.classList.replace('fill-gray-400', 'fill-zinc-600');
+                elements.svgDotText.parentElement.classList.replace('fill-gray-400', 'fill-zinc-600');
+
+                // Disclaimer & Note
+                elements.psiDisclaimer.className = 'p-4 bg-blue-900/10 border border-blue-900/30 rounded-xl';
+                elements.psiText.className = 'text-[11px] text-blue-200/70 leading-relaxed';
+                elements.psiDisclaimer.querySelectorAll('.disclaimer-highlight').forEach(el => el.className = 'text-white font-semibold disclaimer-highlight');
+
+                elements.safetyNote.className = 'bg-red-950/20 border border-red-900/30 rounded-xl p-4';
+                elements.safetyText.className = 'text-[11px] leading-relaxed text-red-200/70 safety-text';
+            }
+            updateUI();
+        }
+
+        // --- Event Listeners ---
+        elements.themeToggle.addEventListener('click', () => {
+            state.isLightMode = !state.isLightMode;
+            updateTheme();
+        });
+
+        elements.inputWidth.addEventListener('input', (e) => {
+            state.width = Number(e.target.value);
+            updateUI();
+        });
+        elements.inputAspectRatio.addEventListener('input', (e) => {
+            state.aspectRatio = Number(e.target.value);
+            updateUI();
+        });
+        elements.inputRimSize.addEventListener('input', (e) => {
+            state.rimSize = Number(e.target.value);
+            updateUI();
+        });
+        elements.inputDotCode.addEventListener('input', (e) => {
+            state.dotCode = e.target.value.replace(/\D/g, '');
+            updateUI();
+        });
+
+        // Focus effects for SVG
+        elements.inputWidth.addEventListener('focus', () => {
+            elements.sidewallHighlight.style.opacity = '0.3';
+            elements.sidewallHighlight.setAttribute('stroke', state.isLightMode ? '#2563eb' : '#3b82f6');
+            elements.cueWidth.classList.remove('hidden');
+            elements.svgWidth.classList.add('fill-app-accent');
+        });
+        elements.inputWidth.addEventListener('blur', () => {
+            elements.sidewallHighlight.style.opacity = '0.1';
+            elements.sidewallHighlight.setAttribute('stroke', state.isLightMode ? '#d1d5db' : '#2d333b');
+            elements.cueWidth.classList.add('hidden');
+            elements.svgWidth.classList.remove('fill-app-accent');
+        });
+
+        elements.inputAspectRatio.addEventListener('focus', () => {
+            elements.sidewallHighlight.style.opacity = '0.3';
+            elements.sidewallHighlight.setAttribute('stroke', state.isLightMode ? '#2563eb' : '#3b82f6');
+            elements.cueAspectRatio.classList.remove('hidden');
+            elements.svgAspectRatio.classList.add('fill-app-accent');
+        });
+        elements.inputAspectRatio.addEventListener('blur', () => {
+            elements.sidewallHighlight.style.opacity = '0.1';
+            elements.sidewallHighlight.setAttribute('stroke', state.isLightMode ? '#d1d5db' : '#2d333b');
+            elements.cueAspectRatio.classList.add('hidden');
+            elements.svgAspectRatio.classList.remove('fill-app-accent');
+        });
+
+        elements.inputRimSize.addEventListener('focus', () => {
+            elements.sidewallHighlight.style.opacity = '0.3';
+            elements.sidewallHighlight.setAttribute('stroke', state.isLightMode ? '#2563eb' : '#3b82f6');
+            elements.svgRimSize.classList.add('fill-app-accent');
+        });
+        elements.inputRimSize.addEventListener('blur', () => {
+            elements.sidewallHighlight.style.opacity = '0.1';
+            elements.sidewallHighlight.setAttribute('stroke', state.isLightMode ? '#d1d5db' : '#2d333b');
+            elements.svgRimSize.classList.remove('fill-app-accent');
+        });
+
+        // --- Initialization ---
+        updateTheme();
+    </script>
+</body>
+</html>
