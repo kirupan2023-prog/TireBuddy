@@ -4,6 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TireBuddy - Your pocket friendly tire consultant</title>
+    
+    <!-- PWA & Mobile Meta Tags -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0f1115">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="TireBuddy">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2936/2936886.png">
+    <meta name="mobile-web-app-capable" content="yes">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -410,9 +420,11 @@
         }
 
         function updateTheme() {
+            const themeColorMeta = document.querySelector('meta[name="theme-color"]');
             if (state.isLightMode) {
                 document.documentElement.classList.add('light');
                 elements.themeText.textContent = 'Light Mode';
+                if (themeColorMeta) themeColorMeta.setAttribute('content', '#f8f9fa');
                 
                 // SVG Theme Updates
                 elements.tireOuter.setAttribute('fill', '#374151');
@@ -436,6 +448,7 @@
             } else {
                 document.documentElement.classList.remove('light');
                 elements.themeText.textContent = 'Dark Mode';
+                if (themeColorMeta) themeColorMeta.setAttribute('content', '#0f1115');
 
                 // SVG Theme Updates
                 elements.tireOuter.setAttribute('fill', '#18181b');
