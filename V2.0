@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TireBuddy - Your pocket friendly tire consultant</title>
+    
+    <!-- PWA & Mobile Meta Tags -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0f1115">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="TireBuddy">
+    <link class="rounded-full" rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2936/2936886.png">
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Dark Mode (Default) - Industrial Yellow/Black theme */
+            --app-bg: #0f1115;
+            --app-card: #1a1d23;
+            --app-accent: #facc15;
+            --app-border: #2d333b;
+            --app-text: #ffffff;
+            --app-text-muted: #ffffff;
+            --app-accent-glow: rgba(250, 204, 21, 0.05);
+
+            /* Premium high fidelity SVG colors */
+            --svg-tire-shadow: #0a0a0c;
+            --svg-tire-highlight: #474751;
+            --svg-rim-plate: #1d1f23;
+            --svg-rim-stamp: #111215;
+            --svg-lug-fill: #4b525d;
+            --svg-lug-stroke: #8e96a4;
+            --svg-hub-cap: #121316;
+        }
+
+        :root.light {
+            /* Light Mode - Deeper amber/gold theme */
+            --app-bg: #f8f9fa;
+            --app-card: #ffffff;
+            --app-accent: #ca8a04;
+            --app-border: #e5e7eb;
+            --app-text: #111827;
+            --app-text-muted: #000000;
+            --app-accent-glow: rgba(202, 138, 4, 0.02);
+
+            /* Premium high fidelity SVG colors */
+            --svg-tire-shadow: #d1d5db;
+            --svg-tire-highlight: #9ca3af;
+            --svg-rim-plate: #e5e7eb;
+            --svg-rim-stamp: #9ca3af;
+            --svg-lug-fill: #9ca3af;
+            --svg-lug-stroke: #4b5563;
+            --svg-hub-cap: #f3f4f6;
+        }
+
+        body {
+            background-color: var(--app-bg);
+            color: var(--app-text);
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+        .bg-app-card { background-color: var(--app-card); }
+        .border-app-border { border-color: var(--app-border); }
+        .text-app-accent { color: var(--app-accent); }
+        .text-app-text-muted { color: var(--app-text-muted); }
+        .bg-app-bg { background-color: var(--app-bg); }
+
+        .transition-all { transition: all 0.3s ease; }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--app-bg); }
+        ::-webkit-scrollbar-thumb { background: var(--app-border); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--app-accent); }
+
+        .tire-svg-container {
+            /* Matte finish, flat presentation for enterprise grade datasheet look */
+            filter: none;
+        }
+
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .dot-status-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .hidden { display: none; }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8">
+    <div class="max-w-2xl mx-auto">
+        <!-- Header -->
+        <header class="mb-6 flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold tracking-tighter text-app-accent [-webkit-text-stroke:0.8px_#000000]">
+                    TIREBUDDY
+                </h1>
+                <p class="text-app-text-muted text-sm mt-1">A tire consultant in your pocket</p>
+            </div>
+            <button id="themeToggleBtn" class="p-2 rounded-full bg-app-bg border border-app-border text-app-text-muted hover:text-app-accent hover:border-app-accent transition-colors">
+            </button>
+        </header>
+
+        <!-- Tabbed Navigation Ribbon -->
+        <nav class="mb-6 flex border-b border-app-border" id="nav-ribbon">
+            <button id="tab-tire-guide" class="flex-1 text-center py-3 px-2 font-bold text-xs uppercase tracking-wider border-b-2 border-app-accent text-app-text transition-all focus:outline-none">
+                Tire Guide
+            </button>
+            <button id="tab-dot-age" class="flex-1 text-center py-3 px-2 font-medium text-xs uppercase tracking-wider border-b-2 border-transparent text-app-text-muted hover:text-app-text transition-all focus:outline-none">
+                DOT Age
+            </button>
+            <button id="tab-insights" class="flex-1 text-center py-3 px-2 font-medium text-xs uppercase tracking-wider border-b-2 border-transparent text-app-text-muted hover:text-app-text transition-all focus:outline-none">
+                Insights
+            </button>
+        </nav>
+
+        <main>
+            <!-- VIEW 1: TIRE GUIDE -->
+            <div id="view-tire-guide" class="space-y-8">
+                <!-- Section 1: Visual Tire Input -->
+                <section class="bg-app-card border border-app-border rounded-2xl p-6 shadow-sm">
+                    <div class="mb-6">
+                        <h2 class="text-lg font-semibold tracking-tight">Tire Sizing &amp; Upsizing Guide</h2>    
+                    </div>
+
+                    <p class="text-xs text-app-text-muted mb-4 text-center">Check your tire's sidewall for the following dimensions</p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                        <!-- Visual Tire SVG -->
+                        <div class="relative flex justify-center py-4">
+                            <svg viewBox="0 0 200 200" class="w-full max-w-[280px] tire-svg-container" style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
+                                <defs>
+                                    <path id="tirePath" d="M 35, 100 A 65, 65 0 1, 1 165, 100 A 65, 65 0 1, 1 35, 100" />
+                                    <path id="dotPath" d="M 38, 45 A 77, 77 0 0, 0 38, 155" />
+                                    <!-- Reusable Lug Nut -->
+                                    <g id="lugNut">
+                                        <polygon points="-3.5,-1.8 -3.5,1.8 0,3.6 3.5,1.8 3.5,-1.8 0,-3.6" fill="#8e96a4" stroke="#d1d5db" stroke-width="0.8" />
+                                        <circle cx="0" cy="0" r="1.3" fill="#111215" />
+                                    </g>
+                                </defs>
+                                
+                                <!-- Pure White Canvas Background Rect -->
+                                <rect width="200" height="200" fill="#ffffff" rx="12" />
+
+                                <!-- Outer Tire (Solid Black Rubber Base) -->
+                                <circle id="tireOuter" cx="100" cy="100" r="95" fill="#111111" />
+                                
+                                <!-- Inner Tire (Merged uniformly into solid black to remove patchy layering) -->
+                                <circle id="tireInner" cx="100" cy="100" r="90" fill="none" stroke="#111111" stroke-width="10" />
+                                
+                                <!-- Interactive Sidewall Area Focus Highlight -->
+                                <circle id="sidewallHighlight" cx="100" cy="100" r="75" fill="none" stroke="#2d333b" stroke-width="30" opacity="0.05" style="transition: all 0.3s ease;" />
+
+                                <!-- Rim (Metal Base - Solid Metallic Grays) -->
+                                <circle id="rimOuter" cx="100" cy="100" r="55" fill="#2d3139" stroke="#4b525d" stroke-width="2" />
+                                <circle id="rimInner" cx="100" cy="100" r="50" fill="none" stroke="#8e96a4" stroke-width="1" opacity="0.4" />
+                                
+                                <!-- OEM Solid Steel Plate Face (No spokes, heavy industrial steelie feel) -->
+                                <circle cx="100" cy="100" r="49" fill="#4c525e" />
+                                <!-- Circular Stampings/Recesses -->
+                                <circle cx="100" cy="100" r="43" fill="none" stroke="#1f2227" stroke-width="2" opacity="0.8" />
+                                <circle cx="100" cy="100" r="34" fill="none" stroke="#1f2227" stroke-width="1" opacity="0.6" />
+                                <circle cx="100" cy="100" r="24" fill="none" stroke="#1f2227" stroke-width="1.5" opacity="0.8" />
+                                
+                                <!-- Central Hub Cap area -->
+                                <circle cx="100" cy="100" r="14" fill="#1a1d22" stroke="#111215" stroke-width="1" />
+                                <circle cx="100" cy="100" r="7" fill="#ffffff" opacity="0.85" />
+                                
+                                <!-- Precise Hexagonal Lug Nut Pattern (6 Lugs) -->
+                                <g>
+                                    <use href="#lugNut" x="122" y="100" />
+                                    <use href="#lugNut" x="111" y="119" />
+                                    <use href="#lugNut" x="89" y="119" />
+                                    <use href="#lugNut" x="78" y="100" />
+                                    <use href="#lugNut" x="89" y="81" />
+                                    <use href="#lugNut" x="111" y="81" />
+                                </g>
+
+                                <!-- High-Visibility Stark White Dimensions Text on Sidewall -->
+                                <text id="svgTireText" font-family="'JetBrains Mono', monospace" font-size="11.5px" fill="#ffffff" font-weight="bold">
+                                    <textPath href="#tirePath" startOffset="50%" textAnchor="middle">
+                                        <tspan id="svgWidth" fill="#ffffff" font-weight="bold">225</tspan>
+                                        <tspan id="svgSeparator1" fill="#ffffff" font-weight="bold"> / </tspan>
+                                        <tspan id="svgAspectRatio" fill="#ffffff" font-weight="bold">45</tspan>
+                                        <tspan id="svgSeparator2" fill="#ffffff" font-weight="bold"> R </tspan>
+                                        <tspan id="svgRimSize" fill="#ffffff" font-weight="bold">17</tspan>
+                                    </textPath>
+                                </text>
+
+                                <!-- DOT Placeholder -->
+                                <g>
+                                    <path d="M 38, 45 A 77, 77 0 0, 0 38, 155" fill="none" stroke="#222222" stroke-width="14" opacity="0.5" />
+                                    <text id="svgDotText" font-family="'JetBrains Mono', monospace" font-size="10px" fill="#ffffff" font-weight="bold">
+                                        <textPath href="#dotPath" startOffset="50%" textAnchor="middle">
+                                            DOT 0000
+                                        </textPath>
+                                    </text>
+                                </g>
+                            </svg>
+                        </div>
+
+                        <!-- Inputs -->
+                        <div class="space-y-4">
+                            <!-- Sizing Standard Selector -->
+                            <div class="space-y-1.5">
+                                <label class="text-xs font-semibold uppercase tracking-wider text-app-text-muted">Sizing Standard</label>
+                                <div class="relative w-full">
+                                    <select id="selectSizingStandard" class="w-full bg-app-bg border border-app-border rounded-lg px-4 py-3 focus:outline-none focus:border-app-accent text-app-text appearance-none cursor-pointer pr-10">
+                                        <option value="standard">Standard (e.g. 225/45 R17)</option>
+                                        <option value="offroad">Off-Road (e.g. 35x12.5 R15)</option>
+                                    </select>
+                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-app-text-muted">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Metric Radial Inputs (Group) -->
+                            <div id="groupRadial" class="space-y-4">
+                                <div class="space-y-1">
+                                    <label class="text-xs font-medium text-app-text-muted">Width (mm)</label>
+                                    <input type="number" id="inputWidth" value="225" class="w-full bg-app-bg border border-app-border rounded-lg px-4 py-3 focus:outline-none focus:border-app-accent transition-colors font-mono text-app-text" placeholder="e.g. 225">
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-xs font-medium text-app-text-muted">Aspect Ratio (%)</label>
+                                    <input type="number" id="inputAspectRatio" value="45" class="w-full bg-app-bg border border-app-border rounded-lg px-4 py-3 focus:outline-none focus:border-app-accent transition-colors font-mono text-app-text" placeholder="e.g. 45">
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-xs font-medium text-app-text-muted">Rim Size (Inches)</label>
+                                    <input type="number" id="inputRimSize" value="17" class="w-full bg-app-bg border border-app-border rounded-lg px-4 py-3 focus:outline-none focus:border-app-accent transition-colors font-mono text-app-text" placeholder="e.g. 17">
+                                </div>
+                            </div>
+
+                            <!-- Flotation Inputs (Group) -->
+                            <div id="groupFlotation" class="space-y-4 hidden">
+                                <div class="space-y-1">
+                                    <label class="text-xs font-medium text-app-text-muted">Overall Diameter (Inches)</label>
+                                    <input type="number" id="inputFloatDiameter" step="0.1" value="31.0" class="w-full bg-app-bg border border-app-border rounded-lg px-4 py-3 focus:outline-none focus:border-app-accent transition-colors font-mono text-app-text" placeholder="e.g. 31.0">
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-xs font-medium text-app-text-muted">Section Width (Inches)</label>
+                                    <input type="number" id="inputFloatWidth" step="0.1" value="10.5" class="w-full bg-app-bg border border-app-border rounded-lg px-4 py-3 focus:outline-none focus:border-app-accent transition-colors font-mono text-app-text" placeholder="e.g. 10.5">
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-xs font-medium text-app-text-muted">Rim Size (Inches)</label>
+                                    <input type="number" id="inputFloatRimSize" value="15" class="w-full bg-app-bg border border-app-border rounded-lg px-4 py-3 focus:outline-none focus:border-app-accent transition-colors font-mono text-app-text" placeholder="e.g. 15">
+                                </div>
+                            </div>
+
+                            <div class="pt-2">
+                                <p class="text-xs text-app-text-muted font-medium">
+                                    Total Diameter: <span id="displayDiameter" class="text-app-accent font-bold font-mono">0.0 mm</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 2: Tire Pressure Recommendations -->
+                <section class="bg-app-card border border-app-border rounded-2xl p-6 shadow-sm">
+                    <div class="mb-6">
+                        <h2 class="text-lg font-semibold tracking-tight">Pressure Recommendations</h2>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div class="bg-app-bg border border-app-border p-5 rounded-xl">
+                                <p id="displayPsi" class="text-2xl font-bold text-app-accent font-mono">--</p>
+                        </div>
+                        
+                        <div id="psiDisclaimer" class="p-4 bg-yellow-400 rounded-xl shadow-sm text-sm text-black">
+                            <p id="psiText" class="text-sm text-black leading-relaxed">
+                                <span class="font-bold">DISCLAIMER:</span> This is a general range based on tire volume. 
+                                Refer to your vehicle's <span class="text-black font-semibold disclaimer-highlight">door placard</span> or <span class="text-black font-semibold disclaimer-highlight">owner's manual</span> for appropriate pressure.
+                            </p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 3: Smart Upsize Engine -->
+                <section class="bg-app-card border border-app-border rounded-2xl p-6 shadow-sm relative">
+                    <div class="mb-6 flex items-center gap-2">
+                        <h2 class="text-lg font-semibold tracking-tight">Smart Upsize Engine</h2>
+                        <!-- Info Tooltip -->
+                        <div class="group relative flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-app-text-muted cursor-help hover:text-app-accent transition-colors">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M12 16v-4"></path>
+                                <path d="M12 8h.01"></path>
+                            </svg>
+                            <!-- Tooltip Content -->
+                            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-3 bg-app-card border border-app-border rounded-xl shadow-sm opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none">
+                                <p class="text-xs leading-relaxed text-app-text">
+                                    Suggestions are mathematically constrained to ±3% rotational variance and filtered against ISO/ETRTO standard commercial tire sizes.
+                                </p>
+                                <!-- Arrow -->
+                                <div class="absolute top-full left-1/2 -translate-x-1/2 -mt-px border-8 border-transparent border-t-app-border"></div>
+                            </div>
+                        </div>
+                    </div>                   
+                        <div id="upsizeContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <!-- Suggestions will be injected here -->
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- VIEW 2: DOT AGE CHECKER -->
+            <div id="view-dot-age" class="hidden space-y-8">
+                <!-- Section 4: DOT Age Checker -->
+                <section class="bg-app-card border border-app-border rounded-2xl p-6 shadow-sm">
+                    <div class="mb-6">
+                        <h2 class="text-lg font-semibold tracking-tight">DOT Age Checker</h2>
+                    </div>
+
+                    <div class="space-y-6">
+                        <div class="p-4 bg-app-bg border border-app-border rounded-xl">
+                            <div>
+                                <p class="text-xs font-bold mb-1">Where to find it?</p>
+                                <p class="text-[11px] text-app-text-muted leading-relaxed">
+                                    Look for the letters <span class="text-white font-semibold disclaimer-highlight">"DOT"</span> followed by a series of characters. 
+                                    The <span class="text-white font-semibold disclaimer-highlight">last 4 digits</span> (often in a raised oval) represent the week and year of manufacture.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-1">
+                            <label class="text-xs font-medium text-app-text-muted">4-Digit DOT Code (WWYY)</label>
+                            <input type="text" id="inputDotCode" maxlength="4" class="w-full bg-app-bg border border-app-border rounded-lg px-4 py-3 focus:outline-none focus:border-app-accent transition-colors font-mono text-xl tracking-[0.5em] text-center text-app-text" placeholder="0000">
+                        </div>
+
+                        <div id="dotStatusResult" class="hidden dot-status-card border border-white/5 rounded-xl p-4">
+                            <div>
+                                <p id="dotStatusLabel" class="text-sm font-bold tracking-tight"></p>
+                                <p id="dotStatusAge" class="text-xs text-app-text-muted"></p>
+                            </div>
+                        </div>
+
+                        <div id="safetyNote" class="bg-red-950/20 border border-red-900/30 rounded-xl p-4">
+                            <h3 class="text-red-400 text-xs font-bold mb-2">
+                            </h3>
+                            <p id="safetyText" class="text-[11px] leading-relaxed text-red-200/70 safety-text">
+                                ⚠️ Important: This check is for age only. Even if your tire is young, always check your tread depth. 
+                                If the tread is worn down to the wear bars, replace your tire immediately regardless of its age!
+                            </p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- VIEW 3: INSIGHTS -->
+            <div id="view-insights" class="hidden space-y-8">
+                <!-- Section 5: Insights View Placeholder -->
+                <section class="bg-app-card border border-app-border rounded-2xl p-6 shadow-sm">
+                    <div class="mb-6">
+                        <h2 class="text-lg font-semibold tracking-tight">Tire Insights</h2>
+                        <p class="text-[10px] text-app-text-muted italic mt-1">Advanced diagnostic forensics & performance indicators.</p>
+                    </div>
+
+                    <div class="p-8 text-center border border-dashed border-app-border rounded-xl bg-app-bg/50">
+                        <div class="mb-4 inline-flex items-center justify-center w-12 h-12 rounded-full bg-app-accent/10 text-app-accent animate-pulse">
+                            <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 18a3.75 3.75 0 0 0 .495-7.467 5.99 5.99 0 0 0-1.925 3.546 5.974 5.974 0 0 1-2.133-1A3.75 3.75 0 0 0 12 18Z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 3a9 9 0 0 0-9 9c0 1.956.623 3.766 1.683 5.25L12 3Z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-bold text-app-accent mb-2">Tire Insights: Coming in V3.0</h3>
+                        <p class="text-xs text-app-text-muted max-w-sm mx-auto leading-relaxed">
+                            In the upcoming V3.0 release, TireBuddy will feature advanced lookup parameters on UTQG treadwear durability, traction indexes, heat dissipation quotients, and professional seasonal tire performance forecasts. Keep an eye out!
+                        </p>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <footer class="mt-12 py-8 border-t border-app-border text-center space-y-3">
+            <p class="text-xs text-app-text-muted">
+                Designed for Mechanical Integrity & Safety
+            </p>
+            <p class="text-xs text-app-text-muted">
+                Developed by <a href="https://www.linkedin.com/in/kirupan-s" target="_blank" rel="noopener noreferrer" class="text-app-accent hover:underline transition-all">Kirupan S</a>
+            </p>
+            <p class="text-xs text-app-text-muted/50">
+                © 2026 TIREBUDDY SYSTEMS • V2.0.0-STABLE
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        // --- Constants ---
+        const INCH_TO_MM = 25.4;
+        const CURRENT_YEAR = 2026;
+
+        // --- State ---
+        let state = {
+            tireType: 'radial', // 'radial', 'flotation'
+            isFlotation: false,
+            width: 225,
+            aspectRatio: 45,
+            rimSize: 17,
+            floatDiameter: 31.0,
+            floatWidth: 10.5,
+            floatRimSize: 15,
+            dotCode: '',
+            isLightMode: false
+        };
+
+        // --- DOM Elements ---
+        const elements = {
+            themeToggleBtn: document.getElementById('themeToggleBtn'),
+            
+            // Tab Buttons
+            tabTireGuide: document.getElementById('tab-tire-guide'),
+            tabDotAge: document.getElementById('tab-dot-age'),
+            tabInsights: document.getElementById('tab-insights'),
+
+            // View Containers
+            viewTireGuide: document.getElementById('view-tire-guide'),
+            viewDotAge: document.getElementById('view-dot-age'),
+            viewInsights: document.getElementById('view-insights'),
+
+            // Standard selector dropdown
+            selectSizingStandard: document.getElementById('selectSizingStandard'),
+            
+            // Standard input groups
+            groupRadial: document.getElementById('groupRadial'),
+            groupFlotation: document.getElementById('groupFlotation'),
+
+            // Inputs
+            inputWidth: document.getElementById('inputWidth'),
+            inputAspectRatio: document.getElementById('inputAspectRatio'),
+            inputRimSize: document.getElementById('inputRimSize'),
+            
+            inputFloatDiameter: document.getElementById('inputFloatDiameter'),
+            inputFloatWidth: document.getElementById('inputFloatWidth'),
+            inputFloatRimSize: document.getElementById('inputFloatRimSize'),
+
+            inputDotCode: document.getElementById('inputDotCode'),
+            displayDiameter: document.getElementById('displayDiameter'),
+            displayPsi: document.getElementById('displayPsi'),
+            upsizeContainer: document.getElementById('upsizeContainer'),
+            dotStatusResult: document.getElementById('dotStatusResult'),
+            dotStatusLabel: document.getElementById('dotStatusLabel'),
+            dotStatusAge: document.getElementById('dotStatusAge'),
+            
+            // SVG Elements
+            svgWidth: document.getElementById('svgWidth'),
+            svgAspectRatio: document.getElementById('svgAspectRatio'),
+            svgRimSize: document.getElementById('svgRimSize'),
+            svgDotText: document.querySelector('#svgDotText textPath'),
+            sidewallHighlight: document.getElementById('sidewallHighlight'),
+            tireOuter: document.getElementById('tireOuter'),
+            tireInner: document.getElementById('tireInner'),
+            rimOuter: document.getElementById('rimOuter'),
+            rimInner: document.getElementById('rimInner'),
+            svgSeparator1: document.getElementById('svgSeparator1'),
+            svgSeparator2: document.getElementById('svgSeparator2'),
+            svgTireText: document.getElementById('svgTireText'),
+            
+            // Theme specific elements
+            psiDisclaimer: document.getElementById('psiDisclaimer'),
+            psiText: document.getElementById('psiText'),
+            safetyNote: document.getElementById('safetyNote'),
+            safetyText: document.getElementById('safetyText')
+        };
+
+        // --- View Router Implementation ---
+        function switchTab(targetTabId) {
+            const views = {
+                'tire-guide': elements.viewTireGuide,
+                'dot-age': elements.viewDotAge,
+                'insights': elements.viewInsights
+            };
+            
+            const tabs = {
+                'tire-guide': elements.tabTireGuide,
+                'dot-age': elements.tabDotAge,
+                'insights': elements.tabInsights
+            };
+
+            Object.keys(views).forEach(key => {
+                if (key === targetTabId) {
+                    views[key].classList.remove('hidden');
+                    tabs[key].className = "flex-1 text-center py-3 px-2 font-bold text-xs uppercase tracking-wider border-b-2 border-app-accent text-app-text transition-all focus:outline-none";
+                } else {
+                    views[key].classList.add('hidden');
+                    tabs[key].className = "flex-1 text-center py-3 px-2 font-medium text-xs uppercase tracking-wider border-b-2 border-transparent text-app-text-muted hover:text-app-text transition-all focus:outline-none";
+                }
+            });
+        }
+
+        // --- Logic Functions ---
+        function calculateDiameter(type, w, ar, r, fDia) {
+            if (type === 'flotation') {
+                return fDia;
+            } else {
+                return (w * (ar / 100) * 2 / 25.4) + r;
+            }
+        }
+
+        function getPsiRecommendation(type, w, ar, r, fWidth) {
+            let widthMm = w;
+            let rim = r;
+            let ratio = ar;
+
+            if (type === 'flotation') {
+                widthMm = fWidth * INCH_TO_MM;
+                rim = r;
+                ratio = 80; // High sidewall default
+            }
+
+            if (widthMm >= 265 || rim >= 19) return "35 - 42 PSI (High Load/Large)";
+            if (widthMm >= 235 || ratio <= 45) return "32 - 38 PSI (Performance/Wide)";
+            return "30 - 34 PSI (Standard Passenger)";
+        }
+
+        function getUpsizeSuggestions(currentDiameterMm, currentRimSize) {
+            // --- Industry Standard Validation ---
+            // Standard manufacturing increments for widths and aspect ratios (ISO/ETRTO)
+            const standardWidths = [145, 155, 165, 175, 185, 195, 205, 215, 225, 235, 245, 255, 265, 275, 285, 295, 305, 315, 325];
+            const standardRatios = [30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85];
+            
+            const suggestions = [];
+
+            // Loop through industry-standard dimensions
+            standardWidths.forEach(w => {
+                standardRatios.forEach(ar => {
+                    const dInches = calculateDiameter('radial', w, ar, currentRimSize);
+                    const dMm = dInches * INCH_TO_MM;
+                    const diffPercent = ((dMm - currentDiameterMm) / currentDiameterMm) * 100;
+                    
+                    // Strictly filter within the ±3% safety window (Speedometer Difference)
+                    if (Math.abs(diffPercent) <= 3) {
+                        suggestions.push({
+                            w, ar, r: currentRimSize,
+                            diff: diffPercent,
+                            speedo: 100 * (currentDiameterMm / dMm)
+                        });
+                    }
+                });
+            });
+
+            // Sort logically by width, then by aspect ratio for a user-friendly list
+            return suggestions
+                .sort((a, b) => a.w - b.w || a.ar - b.ar)
+                .slice(0, 6); // Showing top 6 standard matches
+        }
+
+        // --- UI Update Functions ---
+        function updateUI() {
+            // Toggle form field displays
+            elements.groupRadial.classList.toggle('hidden', state.isFlotation);
+            elements.groupFlotation.classList.toggle('hidden', !state.isFlotation);
+
+            // Sync Sizing Standard dropdown value
+            if (elements.selectSizingStandard) {
+                elements.selectSizingStandard.value = state.isFlotation ? 'offroad' : 'standard';
+            }
+
+            let diameterInches = 0;
+            let activeRim = 15;
+            let psiRec = "";
+
+            if (!state.isFlotation) {
+                diameterInches = calculateDiameter('radial', state.width, state.aspectRatio, state.rimSize);
+                activeRim = state.rimSize;
+                psiRec = getPsiRecommendation('radial', state.width, state.aspectRatio, state.rimSize);
+            } else {
+                diameterInches = calculateDiameter('flotation', 0, 0, state.floatRimSize, state.floatDiameter);
+                activeRim = state.floatRimSize;
+                psiRec = getPsiRecommendation('flotation', 0, 0, state.floatRimSize, state.floatWidth);
+            }
+
+            const diameterMm = diameterInches * INCH_TO_MM;
+            elements.displayDiameter.innerHTML = `${diameterMm.toFixed(1)} mm <span class="text-app-text-muted font-normal text-xs font-mono ml-1">(${diameterInches.toFixed(2)}″)</span>`;
+            elements.displayPsi.textContent = psiRec;
+
+            // Update SVG Text dynamically according to strict formatting standard rules
+            if (!state.isFlotation) {
+                elements.svgWidth.textContent = state.width || '---';
+                elements.svgSeparator1.textContent = ' / ';
+                elements.svgAspectRatio.textContent = state.aspectRatio || '--';
+                elements.svgSeparator2.textContent = ' R ';
+                elements.svgRimSize.textContent = state.rimSize || '--';
+            } else {
+                elements.svgWidth.textContent = state.floatDiameter || '--';
+                elements.svgSeparator1.textContent = ' X ';
+                elements.svgAspectRatio.textContent = state.floatWidth || '--';
+                elements.svgSeparator2.textContent = ' - ';
+                elements.svgRimSize.textContent = state.floatRimSize || '--';
+            }
+
+            elements.svgDotText.textContent = `DOT ${state.dotCode || '0000'}`;
+
+            // Update Upsize Suggestions
+            const suggestions = getUpsizeSuggestions(diameterMm, activeRim);
+            elements.upsizeContainer.innerHTML = suggestions.length > 0 
+                ? suggestions.map(s => `
+                    <div class="bg-app-bg border border-app-border p-4 rounded-xl hover:border-app-accent transition-colors group">
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="font-mono text-lg font-bold">${s.w}/${s.ar} R${s.r}</span>
+                            <span class="text-[10px] font-mono px-2 py-0.5 rounded ${Math.abs(s.diff) < 1 ? (state.isLightMode ? 'bg-green-100 text-green-700' : 'bg-green-900/40 text-green-400') : (state.isLightMode ? 'bg-amber-100 text-amber-800' : 'bg-amber-950/40 text-amber-400')}">
+                                ${s.diff > 0 ? '+' : ''}${s.diff.toFixed(1)}%
+                            </span>
+                        </div>
+                        <div class="space-y-1">
+                            <p class="text-xs font-medium text-app-text-muted">Speedometer Difference</p>
+                            <p class="text-xs mb-2">
+                                At <span class="font-mono">100</span> km/h, shows <span class="text-app-accent font-bold font-mono">${s.speedo.toFixed(1)}</span> km/h
+                            </p>
+                            <div class="pt-2 border-t border-app-border/60">
+                                <a href="https://www.google.com/search?tbm=shop&q=${s.w}%2F${s.ar}+R${s.r}+tire" target="_blank" rel="noopener noreferrer" class="inline-flex items-center text-[10px] text-app-text-muted hover:text-app-accent hover:underline gap-1 transition-colors">
+                                    Check Market Availability
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"></path>
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `).join('')
+                : `<div class="col-span-full py-8 text-center border border-dashed border-app-border rounded-xl">
+                    <p class="text-app-text-muted text-sm">No safe alternatives found for this size.</p>
+                   </div>`;
+
+            // Update DOT Status
+            if (state.dotCode.length === 4) {
+                const year = parseInt(state.dotCode.substring(2)) + 2000;
+                const age = CURRENT_YEAR - year;
+                let status = { label: 'Replace (Old)', color: 'text-red-500', bg: state.isLightMode ? 'bg-red-50' : 'bg-red-950/20', icon: 'alert-triangle' };
+                
+                if (age < 0) status = { label: 'Invalid Year', color: 'text-gray-400', bg: state.isLightMode ? 'bg-gray-100' : 'bg-gray-800', icon: 'info' };
+                else if (age <= 5) status = { label: 'Safe (Young)', color: 'text-green-500', bg: state.isLightMode ? 'bg-green-50' : 'bg-green-950/20', icon: 'check-circle-2' };
+                else if (age <= 9) status = { label: 'Caution (Aging)', color: state.isLightMode ? 'text-amber-600' : 'text-amber-450', bg: state.isLightMode ? 'bg-amber-50' : 'bg-amber-950/20', icon: 'alert-triangle' };
+
+                elements.dotStatusResult.className = `${status.bg} border ${state.isLightMode ? 'border-gray-200' : 'border-white/5'} rounded-xl p-4 dot-status-card`;
+                elements.dotStatusLabel.className = `text-sm font-bold tracking-tight ${status.color}`;
+                elements.dotStatusLabel.textContent = status.label;
+                elements.dotStatusAge.textContent = age >= 0 ? `Tire is approximately ${age} years old.` : 'Please enter a valid code.';
+                elements.dotStatusResult.classList.remove('hidden');
+            } else {
+                elements.dotStatusResult.classList.add('hidden');
+            }
+        }
+
+        const iconSun = `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+  <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
+</svg>`;
+
+        const iconMoon = `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+  <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+</svg>`;
+
+        function updateThemeIcon() {
+            if (elements.themeToggleBtn) {
+                elements.themeToggleBtn.innerHTML = document.documentElement.classList.contains('light') ? iconSun : iconMoon;
+            }
+        }
+
+        function updateTheme() {
+            const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+            state.isLightMode = document.documentElement.classList.contains('light');
+            if (state.isLightMode) {
+                if (themeColorMeta) themeColorMeta.setAttribute('content', '#f8f9fa');
+
+                // Disclaimer & Note
+                elements.psiDisclaimer.className = 'p-4 bg-yellow-400 rounded-xl shadow-sm text-sm text-black';
+                elements.psiText.className = 'text-sm text-black leading-relaxed';
+                elements.psiDisclaimer.querySelectorAll('.disclaimer-highlight').forEach(el => el.className = 'text-black font-semibold disclaimer-highlight');
+                
+                elements.safetyNote.className = 'bg-red-50 border border-red-100 rounded-xl p-4';
+                elements.safetyText.className = 'text-[11px] leading-relaxed text-red-800 safety-text';
+            } else {
+                if (themeColorMeta) themeColorMeta.setAttribute('content', '#0f1115');
+
+                // Disclaimer & Note
+                elements.psiDisclaimer.className = 'p-4 bg-yellow-400 rounded-xl shadow-sm text-sm text-black';
+                elements.psiText.className = 'text-sm text-black leading-relaxed';
+                elements.psiDisclaimer.querySelectorAll('.disclaimer-highlight').forEach(el => el.className = 'text-black font-semibold disclaimer-highlight');
+
+                elements.safetyNote.className = 'bg-red-950/20 border border-red-900/30 rounded-xl p-4';
+                elements.safetyText.className = 'text-[11px] leading-relaxed text-red-200/70 safety-text';
+            }
+            updateThemeIcon();
+            updateUI();
+        }
+
+        // --- Event Listeners ---
+        elements.themeToggleBtn.addEventListener('click', () => {
+            document.documentElement.classList.toggle('light');
+            updateTheme();
+        });
+
+        // Tab Event Listeners
+        elements.tabTireGuide.addEventListener('click', () => switchTab('tire-guide'));
+        elements.tabDotAge.addEventListener('click', () => switchTab('dot-age'));
+        elements.tabInsights.addEventListener('click', () => switchTab('insights'));
+
+        // Sizing Standard change trigger
+        elements.selectSizingStandard.addEventListener('change', (e) => {
+            state.isFlotation = e.target.value === 'offroad';
+            state.tireType = state.isFlotation ? 'flotation' : 'radial';
+            updateUI();
+        });
+
+        // Metric Radial inputs listeners
+        elements.inputWidth.addEventListener('input', (e) => {
+            state.width = Number(e.target.value);
+            updateUI();
+        });
+        elements.inputAspectRatio.addEventListener('input', (e) => {
+            state.aspectRatio = Number(e.target.value);
+            updateUI();
+        });
+        elements.inputRimSize.addEventListener('input', (e) => {
+            state.rimSize = Number(e.target.value);
+            updateUI();
+        });
+
+        // Flotation inputs listeners
+        elements.inputFloatDiameter.addEventListener('input', (e) => {
+            state.floatDiameter = Number(e.target.value);
+            updateUI();
+        });
+        elements.inputFloatWidth.addEventListener('input', (e) => {
+            state.floatWidth = Number(e.target.value);
+            updateUI();
+        });
+        elements.inputFloatRimSize.addEventListener('input', (e) => {
+            state.floatRimSize = Number(e.target.value);
+            updateUI();
+        });
+
+        // DOT age listener
+        elements.inputDotCode.addEventListener('input', (e) => {
+            state.dotCode = e.target.value.replace(/\D/g, '');
+            updateUI();
+        });
+
+        // --- Initialization ---
+        updateTheme();
+    </script>
+</body>
+</html>
